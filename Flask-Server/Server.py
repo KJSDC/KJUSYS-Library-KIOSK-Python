@@ -12,7 +12,7 @@ app = Flask(__name__)
 ######## START FUNCTION FOR AUTOMATICALLY FETCHING UID######
 ############################################################
 try:
-    ser = serial.Serial('COM5', 9600, timeout=1)
+    ser = serial.Serial('COM5', 115200, timeout=1)
 except serial.SerialException as e:
     ser = None
     print(f"Failed to connect to serial port: {e}")
@@ -89,12 +89,15 @@ def read_rfid():
 
     while read_active:
         if ser.in_waiting > 0:
-            rfid_tag = ser.readline().strip().decode('utf-8')  # Read and decode the RFID tag
-            if any(flag_str in rfid_tag for flag_str in flag):
-                continue
-            else:
-                last_uid = rfid_tag.strip()
-                print("\nRead Successfully: " + last_uid)
+            try:
+                rfid_tag = ser.readline().strip().decode('utf-8')  # Read and decode the RFID tag
+                if any(flag_str in rfid_tag for flag_str in flag):
+                    continue
+                else:
+                    last_uid = rfid_tag.strip()
+                    print("\nRead Successfully: " + last_uid)
+            except UnicodeDecodeError:
+                print("Failed to decode RFID tag")
 
 # Start a background thread to read RFID data if the serial port is available
 if ser is not None:
