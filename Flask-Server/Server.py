@@ -12,12 +12,13 @@ app = Flask(__name__)
 ######## START FUNCTION FOR AUTOMATICALLY FETCHING UID######
 ############################################################
 try:
-    ser = serial.Serial('COM5', 115200, timeout=1)
+    ser = serial.Serial('COM5', 9600, timeout=1)
 except serial.SerialException as e:
     ser = None
     print(f"Failed to connect to serial port: {e}")
 
 # Global variable to store the last read UID
+auth = ""
 last_uid = ""
 read_active = True
 write_active = False
@@ -120,6 +121,19 @@ def query_database(uid, cursor):
 ############################################################
 ######## SEARCH AND KEYSTROKE ENTRY FUNCTION END ###########
 ############################################################
+
+# AUTHENTICATION
+
+@app.route('/auth', methods=['POST'])
+def auth():
+    global auth
+    auth = request.form[auth]
+    if auth:
+        return jsonify({'status': 'success'})
+    else:
+        return jsonify({'status': 'failed'})
+
+# AUTHENTICATION END
 
 # HOMEPAGE
 
