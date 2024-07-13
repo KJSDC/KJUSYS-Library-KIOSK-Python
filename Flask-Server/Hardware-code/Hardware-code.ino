@@ -21,11 +21,10 @@ void setup() {
   rfid.PCD_Init();
   digitalWrite(STATUS, HIGH);
 
-  // Initialize LEDC peripheral for the buzzer
-  ledcSetup(0, 5000, 8); // Channel 0, 5 kHz frequency, 8-bit resolution
-  ledcAttachPin(BUZZER, 0); // Attach channel 0 to the buzzer pin
+  ledcSetup(0, 5000, 8);
+  ledcAttachPin(BUZZER, 0);
 
-  // Set the key (default key)
+  // Set the default key
   for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF;
 }
 
@@ -41,52 +40,62 @@ void loop() {
 }
 
 void writeData() {
-  String dataToWrite = "";
   while (true) {
     if (Serial.available() > 0) {
-      char incomingChar = Serial.read();
-      if (incomingChar == ':') {
+      String dataToWrite = Serial.readStringUntil('\n');
+      dataToWrite.trim();
+
+      if (dataToWrite.endsWith(":")) {
+        dataToWrite.remove(dataToWrite.length() - 1);
         break;
-      } else {
-        dataToWrite += incomingChar;
+      }
+
+      dataToWrite += "#"; // Add delimiter
+      byte blockAddr = 4; // Block address to write to
+      MFRC522::StatusCode status;
+
+      if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+        // Authenticate
+        status = rfid.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, blockAddr, &key, &(rfid.uid));
+        if (status != MFRC522::STATUS_OK) {
+          Serial.print(F("PCD_Authenticate() failed: "));
+          Serial.println(rfid.GetStatusCodeName(status));
+          return;
+        }
+
+        // Write data to the block
+        byte buffer[18] = {0};
+        dataToWrite.getBytes(buffer, 18);
+        status = rfid.MIFARE_Write(blockAddr, buffer, 16);
+        if (status != MFRC522::STATUS_OK) {
+          Serial.print(F("MIFARE_Write() failed: "));
+          Serial.println(rfid.GetStatusCodeName(status));
+        } else {
+          // Buzzer and LED indicators
+          digitalWrite(INDICATOR, HIGH);
+          // Start the tone using LEDC
+          ledcWriteTone(0, 698); // Channel 0, frequency 698 Hz
+          delay(50);
+          digitalWrite(INDICATOR, LOW);
+          // Stop the tone
+          ledcWriteTone(0, 0);
+
+          Serial.println(F("Data was written successfully"));
+        }
+
+        // Halt PICC and stop encryption on PCD
+        rfid.PICC_HaltA();
+        rfid.PCD_StopCrypto1();
       }
     }
   }
-
-  dataToWrite.trim();
-  dataToWrite += "#"; // Add delimiter
-  byte blockAddr = 4; // Block address to write to
-  MFRC522::StatusCode status;
-
-  // Authenticate
-  status = rfid.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, blockAddr, &key, &(rfid.uid));
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("PCD_Authenticate() failed: "));
-    Serial.println(rfid.GetStatusCodeName(status));
-    return;
-  }
-
-  // Write data to the block
-  byte buffer[18];
-  dataToWrite.getBytes(buffer, 18);
-  status = rfid.MIFARE_Write(blockAddr, buffer, 16);
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("MIFARE_Write() failed: "));
-    Serial.println(rfid.GetStatusCodeName(status));
-  } else {
-    Serial.println(F("Data was written successfully"));
-  }
-
-  // Halt PICC and stop encryption on PCD
-  rfid.PICC_HaltA();
-  rfid.PCD_StopCrypto1();
 }
 
 void printData() {
   while (true) {
     if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
       byte blockAddr = 4; // Block address to read from
-      byte buffer[18];
+      byte buffer[18] = {0};
       byte size = sizeof(buffer);
       MFRC522::StatusCode status;
 
@@ -105,14 +114,25 @@ void printData() {
         Serial.println(rfid.GetStatusCodeName(status));
       } else {
         String readData = "";
-        for (byte i = 0; i < size; i++) {
-          readData += (char)buffer[i];
+        for (byte i = 0; i < 16; i++) {
+          if (buffer[i] >= 32 && buffer[i] <= 126) { // Only add printable characters
+            readData += (char)buffer[i];
+          }
         }
         readData.replace("#", ""); // Remove delimiter
+
+        // Buzzer and LED indicators
+        digitalWrite(INDICATOR, HIGH);
+        // Start the tone using LEDC
+        ledcWriteTone(0, 698); // Channel 0, frequency 698 Hz
+        delay(50);
+        digitalWrite(INDICATOR, LOW);
+        // Stop the tone
+        ledcWriteTone(0, 0);
+
         Serial.println(readData);
       }
 
-      // Halt PICC and stop encryption on PCD
       rfid.PICC_HaltA();
       rfid.PCD_StopCrypto1();
     }
