@@ -33,7 +33,7 @@ void loop() {
     char command = Serial.read();
     if (command == ';') {
       writeData();
-    } else if (command == '/') {
+    } else if (command == '-') {
       printData();
     }
   }
@@ -79,8 +79,6 @@ void writeData() {
           digitalWrite(INDICATOR, LOW);
           // Stop the tone
           ledcWriteTone(0, 0);
-
-          Serial.println(F("Data was written successfully"));
         }
 
         // Halt PICC and stop encryption on PCD
@@ -113,6 +111,18 @@ void printData() {
         Serial.print(F("MIFARE_Read() failed: "));
         Serial.println(rfid.GetStatusCodeName(status));
       } else {
+
+        // Print UID in hex format
+        for (byte i = 0; i < rfid.uid.size; i++) {
+          if (rfid.uid.uidByte[i] < 0x10) {
+            Serial.print("0"); // Ensure two-digit hex output
+          }
+          Serial.print(rfid.uid.uidByte[i], HEX);
+          Serial.print(" ");
+        }
+        Serial.println();
+
+        // Print data from the block
         String readData = "";
         for (byte i = 0; i < 16; i++) {
           if (buffer[i] >= 32 && buffer[i] <= 126) { // Only add printable characters
@@ -120,6 +130,9 @@ void printData() {
           }
         }
         readData.replace("#", ""); // Remove delimiter
+
+        // Print Data
+        Serial.println(readData);
 
         // Buzzer and LED indicators
         digitalWrite(INDICATOR, HIGH);
@@ -129,8 +142,6 @@ void printData() {
         digitalWrite(INDICATOR, LOW);
         // Stop the tone
         ledcWriteTone(0, 0);
-
-        Serial.println(readData);
       }
 
       rfid.PICC_HaltA();
@@ -139,7 +150,7 @@ void printData() {
 
     if (Serial.available() > 0) {
       char command = Serial.read();
-      if (command == '\\') {
+      if (command == '_') {
         break;
       }
     }
