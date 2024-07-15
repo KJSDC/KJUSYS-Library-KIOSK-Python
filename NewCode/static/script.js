@@ -1,110 +1,65 @@
-document.addEventListener("DOMContentLoaded", async function () {
-  async function getReadData() {
-    let uidField = document.getElementById("cardUID");
-    let dataField = document.getElementById("cardData");
-  
+document.addEventListener("DOMContentLoaded", function () {
+  const startReadButton = document.getElementById("startRead");
+  const stopReadButton = document.getElementById("stopRead");
+  const startWriteButton = document.getElementById("startWrite");
+  const writeDataButton = document.getElementById("writeData");
+  const stopWriteButton = document.getElementById("stopWrite");
+  const container = document.getElementById("container");
+
+  async function sendCommand(url) {
     try {
-      const response = await fetch('http://127.0.0.1:5000/getReadData');
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
       const result = await response.json();
-  
-      if (!result.uid || !result.data) {
-        console.log("Error in fetching data");
-      } else {
-        console.log("Data received, uid: " + result.uid + " data: " + result.data);
-        uidField.value = result.uid;
-        dataField.value = result.data;
-      }
+      console.log(result.status);
     } catch (error) {
-      console.error(error);
+      console.error("Error:", error);
+    }
+  }
+
+  startReadButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    sendCommand("/startRead");
+  });
+
+  stopReadButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    sendCommand("/stopRead");
+    container.classList.add("active");
+  });
+
+  startWriteButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    sendCommand("/startWrite");
+  });
+
+  stopWriteButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    sendCommand("/stopWrite");
+    container.classList.remove("active");
+  });
+
+  writeDataButton.addEventListener("click", async function (event) {
+    event.preventDefault();
+    const data = document.getElementById("newData").value;
+    const url = "/newWrite/" + encodeURIComponent(data);
+    await sendCommand(url);
+  });
+
+  async function getReadData() {
+    try {
+      const response = await fetch("/getReadData");
+      const result = await response.json();
+      document.getElementById("cardUID").value = result.uid;
+      document.getElementById("cardData").value = result.data;
+    } catch (error) {
+      console.error("Error fetching read data:", error);
     }
   }
 
   setInterval(getReadData, 500);
-
-  try {
-    response = await fetch("http://127.0.0.1:5000/startRead");
-    result = await response.json();
-    console.log(result.status);
-  }
-  catch (e) {
-    console.log("Exception has occured: "&e)
-  }
 });
-
-async function newWriteFunction(event) {
-  event.preventDefault(); // Prevent default form submission
-
-  let data = document.getElementById("newData").value;
-  let url = "http://127.0.0.1:5000/newWrite/" + data;
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST', // Ensure it is a POST request
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const result = await response.json();
-
-    if (result.status == 'success') {
-      console.log("New data has been written");
-      window.alert("Data Updated Successfully");
-    } else {
-      console.log("New data was not written due to an error, check server logs");
-      window.alert("Data Updation Failed");
-    }
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Animation and read write functions
-
-const container = document.getElementById("container");
-const Read = document.getElementById("startRead");
-const Write = document.getElementById("startWrite");
-const writeData = document.getElementById("writeData");
-// const startReading = document.getElementById("startReading");
-// const stopReading = document.getElementById("stopReading");
-
-
-Read.addEventListener("click", async () => {
-  try {
-    // Stop reading
-    let stopResponse = await fetch("http://127.0.0.1:5000/stopRead");
-    let stopResult = await stopResponse.json();
-    console.log(stopResult.status);
-
-    // Start writing
-    let startResponse = await fetch("http://127.0.0.1:5000/startWrite");
-    let startResult = await startResponse.json();
-    console.log(startResult.status);
-  } catch (e) {
-    console.log("Exception has occurred: " + e);
-  }
-
-  container.classList.add("active");
-});
-
-
-Write.addEventListener("click", async () => {
-  try {
-    // Stop writing
-    let stopResponse = await fetch("http://127.0.0.1:5000/stopWrite");
-    let stopResult = await stopResponse.json();
-    console.log(stopResult.status);
-
-    // Start reading
-    let startResponse = await fetch("http://127.0.0.1:5000/startRead");
-    let startResult = await startResponse.json();
-    console.log(startResult.status);    
-  } catch (e) {
-    console.log("Exception has occurred: " + e);
-  }
-
-  container.classList.remove("active");
-});
-
-
-writeData.addEventListener("click", newWriteFunction);

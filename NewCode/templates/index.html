@@ -17,6 +17,7 @@
           <h1>Place The Card</h1>
           <span>Click on write data after placing the card</span>
           <input id="newData" placeholder="New data that you want on the card" />
+          <button id="startWrite">Start Writing</button>
           <button id="writeData">Write Data</button>
         </form>
       </div>
@@ -26,8 +27,7 @@
           <span>Click on start reading and tap your rfid card</span>
           <input id="cardUID" placeholder="UID of the Card" />
           <input id="cardData" placeholder="Data on the Card" />
-          <button id="startReading">Start Reading</button>
-          <button id="stopReading">Stop Reading</button>
+          <button id="startRead">Start Reading</button>
         </form>
       </div>
       <div class="toggle-container">
@@ -37,12 +37,12 @@
             <p>
               Type the new data you want on the card in the input field and click write data to update the existing data in the card
             </p>
-            <button class="hidden" id="startWrite">Read Data</button>
+            <button class="hidden" id="stopWrite">Read Data</button>
           </div>
           <div class="toggle-panel toggle-right">
             <h1>Data Reading Page</h1>
             <p>The UID of the Card you scan and the Data on it will be filled in these fields</p>
-            <button class="hidden" id="startRead">Write Data</button>
+            <button class="hidden" id="stopRead">Write Data</button>
           </div>
         </div>
       </div>

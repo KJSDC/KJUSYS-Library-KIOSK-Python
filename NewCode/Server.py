@@ -15,6 +15,7 @@ last_read_uid = ""
 
 try:
     ser = serial.Serial('COM5', 115200, timeout=1)
+    print("Serial port connected.")
 except serial.SerialException as e:
     ser = None
     print(f"Failed to connect to serial port: {e}")
@@ -23,6 +24,7 @@ except serial.SerialException as e:
 def serial_write(command):
     if ser:
         ser.write(command.encode())
+        print(f"Command sent to serial: {command}")
 
 # Function to read data from the serial port
 def read_from_serial():
@@ -38,7 +40,7 @@ def read_from_serial():
         "mode:DIO, clock div:1", "load:0x3fff0030,len:1184", "load:0x40078000,len:13260", 
         "load:0x40080400,len:3028", "entry 0x400805e4"
     }
-
+    
     while True:
         if ser.in_waiting > 0:
             try:
@@ -71,38 +73,42 @@ if ser is not None:
 @app.route('/')
 def index():
     return render_template('index.html')
-    
-@app.route('/startRead')
+
+@app.route('/startRead', methods=['POST'])
 def startRead():
     try:
         serial_write(read_command)
         return jsonify({'status': 'read started'})
     except Exception as e:
-        print(f"Exception occured while starting read: {e}")
-    
-@app.route('/stopRead')
+        print(f"Exception occurred while starting read: {e}")
+        return jsonify({'status': 'failed', 'error': str(e)}), 500
+
+@app.route('/stopRead', methods=['POST'])
 def stopRead():
     try:
         serial_write(stop_read_command)
         return jsonify({'status': 'read stopped'})
     except Exception as e:
-        print(f"Exception occured while stopping read: {e}")
+        print(f"Exception occurred while stopping read: {e}")
+        return jsonify({'status': 'failed', 'error': str(e)}), 500
 
-@app.route('/startWrite')
+@app.route('/startWrite', methods=['POST'])
 def startWrite():
     try:
         serial_write(write_command)
         return jsonify({'status': 'write started'})
     except Exception as e:
-        print(f"Exception occured while starting write: {e}")
+        print(f"Exception occurred while starting write: {e}")
+        return jsonify({'status': 'failed', 'error': str(e)}), 500
 
-@app.route('/stopWrite')
+@app.route('/stopWrite', methods=['POST'])
 def stopWrite():
     try:
         serial_write(stop_write_command)
         return jsonify({'status': 'write stopped'})
     except Exception as e:
-        print(f"Exception occured while stopping write: {e}")
+        print(f"Exception occurred while stopping write: {e}")
+        return jsonify({'status': 'failed', 'error': str(e)}), 500
 
 # Endpoint to send data to be written to the EEPROM
 @app.route('/newWrite/<data>', methods=['POST'])
@@ -117,7 +123,6 @@ def newWrite(data):
 @app.route('/getReadData')
 def getReadData():
     return jsonify({'uid': last_read_uid, 'data': last_read_data})
-
 
 if __name__ == '__main__':
     app.run()
