@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const stopWriteButton = document.getElementById("stopWrite");
   const container = document.getElementById("container");
 
+  // Universal function to fetch endpoints
   async function sendCommand(url) {
     try {
       const response = await fetch(url, {
@@ -24,11 +25,21 @@ document.addEventListener("DOMContentLoaded", function () {
   startReadButton.addEventListener("click", (event) => {
     event.preventDefault();
     sendCommand("/startRead");
+
+    // CSS for transition
+    startReadButton.classList.add("active");
+    startReadButton.textContent = "Reading Data . . ."
   });
 
   stopReadButton.addEventListener("click", async (event) => {
     event.preventDefault();
+    // CSS change for start reading button
+    startReadButton.classList.remove("active");
+    startReadButton.textContent = "Start Reading"
+
+    // CSS for transition
     container.classList.add("active");
+
     sendCommand("/stopRead");
     // Delay to mitigate serial conflict
     await new Promise(r => setTimeout(r, 500));
