@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   const startReadButton = document.getElementById("startRead");
   const stopReadButton = document.getElementById("stopRead");
-  const startWriteButton = document.getElementById("startWrite");
+  // const startWriteButton = document.getElementById("startWrite");
   const writeDataButton = document.getElementById("writeData");
   const stopWriteButton = document.getElementById("stopWrite");
   const container = document.getElementById("container");
@@ -26,16 +26,21 @@ document.addEventListener("DOMContentLoaded", function () {
     sendCommand("/startRead");
   });
 
-  stopReadButton.addEventListener("click", (event) => {
+  stopReadButton.addEventListener("click", async (event) => {
     event.preventDefault();
     sendCommand("/stopRead");
+    // Delay to mitigate serial conflict
+    await new Promise(r => setTimeout(r, 500));
+    // Send the second command to start the write function
+    sendCommand("/startWrite");
     container.classList.add("active");
   });
 
-  startWriteButton.addEventListener("click", (event) => {
-    event.preventDefault();
-    sendCommand("/startWrite");
-  });
+  // // Removed start write binding and changed it to auto write
+  // startWriteButton.addEventListener("click", (event) => {
+  //   event.preventDefault();
+  //   sendCommand("/startWrite");
+  // });
 
   stopWriteButton.addEventListener("click", (event) => {
     event.preventDefault();
@@ -62,4 +67,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   setInterval(getReadData, 500);
+  // // Sending command to start reading at startup 
+  // sendCommand("/startRead");
 });
