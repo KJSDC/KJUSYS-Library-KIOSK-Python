@@ -28,12 +28,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   stopReadButton.addEventListener("click", async (event) => {
     event.preventDefault();
+    container.classList.add("active");
     sendCommand("/stopRead");
     // Delay to mitigate serial conflict
     await new Promise(r => setTimeout(r, 500));
     // Send the second command to start the write function
     sendCommand("/startWrite");
-    container.classList.add("active");
   });
 
   // // Removed start write binding and changed it to auto write
