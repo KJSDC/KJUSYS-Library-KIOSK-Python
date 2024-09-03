@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library</title>
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+    <div class="main">
+        <div class="portselect">
+            <div class="text">
+              <h1>Select Port</h1>
+              <p>Identify the port from device manager and select the port</p>  
+            </div>
+            <div class="select">
+              <div class="port">
+                <p>ID card COM Port</p> 
+                <select name="port" id="IDport"></select>
+              </div>
+              <div class="port">
+                <p>Book Reader COM Port</p> 
+                <select name="port" id="BookPort"></select>
+              </div>
+            </div>
+            <button id="connectCOM" class="serialStatus">Connect ID Port</button>
+            <button id="disconnectCOM" class="">Disconnect Port</button>
+        </div>
+        <div class="container" id="container">
+            <div class="form-container data-read">
+              <form>
+                <!-- Read UID & Data section  -->
+                <h1>Tap The Card</h1>
+                <span>Click on start reading and tap your rfid card</span>
+                <input id="idCardData" placeholder="Data on the ID Card" />
+                <input id="bookData" placeholder="Data on the Book" />       
+                
+                <button class="" id="startKeystroke" disabled>Start Reading</button>
+                <button id="stopKeystroke" disabled>Stop Reading</button>
+              </form>
+            </div>
+            <div class="toggle-container">
+              <div class="toggle">
+                <div class="toggle-panel toggle-right">
+                  <h1>Data Reading Page</h1>
+                  <p>The UID of the Card you scan and the Data on it will be filled in these fields</p>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+</body>
+<script src="../static/library.js"></script>
+</html>
