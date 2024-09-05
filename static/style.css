@@ -2,11 +2,6 @@
 
 :root {
   --light: #f6f6f9;
-<<<<<<< Updated upstream
-=======
-  --primary: #330065;
-  --light-primary: #9400d4;
->>>>>>> Stashed changes
   --grey: #eee;
   --dark-grey: #aaaaaa;
   --dark: #25252c;
@@ -17,15 +12,9 @@
   --light-warning: #fff2c6;
   --success: #005678;
   --light-success: #bbf7d0;
-<<<<<<< Updated upstream
   --primary: #e86705;
   --light-primary: #f8b26a;
   --success: #05d9e8;
-=======
-  /* --primary: #e86705;
-  --light-primary: #f8b26a; */
-  --new-success: #05d9e8;
->>>>>>> Stashed changes
   --old-primary: #005678;
   --old-light-primary: #05d9e8;
   --old-success: #005678;
@@ -83,10 +72,6 @@ body {
   height: 60px;
   width: 200px;
 }
-
-
-
-
 
 .mainselect {
   background-color: var(--dark);
