@@ -53,7 +53,12 @@ def get_id_read_data():
                 id_data = ser.readline().strip().decode('utf-8')
 
             if id_data == "PCD_Authenticate() failed: Error in communication." or id_data == "PCD_Authenticate() failed: Timeout in communication." or id_data == "MIFARE_Read() failed: The CRC_A does not match." :
-                    print(f"Encountered error: {id_data}")
+                print(f"Encountered error: {id_data}")
+
+            elif id_data == "No Response..." or id_data == "Unknown command.":
+                print(f"System output found: {book_data}, skipping updation...")
+                continue;
+            
             else:
                 notify_id_change(id_data)
                 print(f"ID data updated, ID: {id_data}")
@@ -72,7 +77,12 @@ def get_book_read_data():
                 book_data = ser.readline().strip().decode('utf-8')
 
             if book_data == "PCD_Authenticate() failed: Error in communication." or id_data == "PCD_Authenticate() failed: Timeout in communication." or id_data == "MIFARE_Read() failed: The CRC_A does not match." :
-                    print(f"Encountered error: {book_data}")
+                print(f"Encountered error: {book_data}")
+
+            elif book_data == "No Response..." or book_data == "Unknown command.":
+                print(f"System output found: {book_data}, skipping updation...")
+                continue;
+            
             else:
                 notify_book_change(book_data)
                 print(f"ID data updated, ID: {book_data}")
