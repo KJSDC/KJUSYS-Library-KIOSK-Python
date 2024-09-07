@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap");
 
 :root {
+  --opaque-light: rgba(255, 255, 255, 0.212);
   --light: #f6f6f9;
   --grey: #eee;
   --dark-grey: #aaaaaa;
@@ -12,11 +13,12 @@
   --light-warning: #fff2c6;
   --success: #005678;
   --light-success: #bbf7d0;
-  --primary: #e86705;
-  --light-primary: #f8b26a;
-  --success: #05d9e8;
-  --old-primary: #005678;
-  --old-light-primary: #05d9e8;
+  --old-primary: #e86705;
+  --old-light-primary: #f8b26a;
+  --button-primary: ;
+  --success: #005678;
+  --light-primary: #0e121b;
+  --primary: #222834;
   --old-success: #005678;
   transition: --primary 0.5s 0.2s cubic-bezier(0.4, 0, 0.2, 1), --light-primary 0.5s 0.2s ease-in-out, --success 0.5s 0.2s ease-in-out;
 }
@@ -29,8 +31,13 @@
 }
 
 body {
-  background-color: var(--darker);
-  background: var(--darker);
+  background-image: url(./6173960.jpg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  /* backdrop-filter: blur(0.5rem); */
+  /* background-color: var(--darker);
+  background: var(--darker); */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,7 +101,7 @@ body {
 }
 
 .portselect {
-  background-color: var(--dark);
+  background-color: var(--opaque-light);
   color: var(--light);
   border-radius: 30px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
@@ -190,7 +197,7 @@ body {
 
 
 .container {
-  background-color: var(--dark);
+  background-color: var(--opaque-light);
   color: var(--grey);
   border-radius: 30px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
@@ -221,6 +228,7 @@ body {
 
 .container button {
   background-color: var(--primary);
+  width: 80%;
   color: var(--light);
   font-size: 12px;
   padding: 10px 45px;
@@ -239,7 +247,7 @@ body {
 }
 
 .container form {
-  background-color: var(--dark);
+  background-color: rgba(0, 0, 0, 0);
   display: flex;
   align-items: center;
   justify-content: center;
