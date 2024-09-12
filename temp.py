@@ -1,13 +1,14 @@
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO, emit
-import serial
-import threading
 import serial.tools.list_ports
-# import pyautogui
+from flask_cors import CORS
+import threading
+import serial
 import time
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app)
 
 # Global variables for serial ports and threads
 ser = None
@@ -48,48 +49,45 @@ def notify_book_change(new_book):
 def get_id_read_data():
     global stop_threads, id_data
     while not stop_threads:
-        try:
-            if ser.in_waiting > 0:
-                id_data = ser.readline().strip().decode('utf-8')
+        if ser.in_waiting > 0:
+            id_data = ser.readline().strip().decode('utf-8')
+            try:
+                if id_data == "PCD_Authenticate() failed: Error in communication." or id_data == "PCD_Authenticate() failed: Timeout in communication." or id_data == "MIFARE_Read() failed: The CRC_A does not match." :
+                    print(f"Encountered error: {id_data}")
 
-            if id_data == "PCD_Authenticate() failed: Error in communication." or id_data == "PCD_Authenticate() failed: Timeout in communication." or id_data == "MIFARE_Read() failed: The CRC_A does not match." :
-                print(f"Encountered error: {id_data}")
-
-            elif id_data == "No Response..." or id_data == "Unknown command.":
-                print(f"System output found: {book_data}, skipping updation...")
-                continue;
+                elif id_data == "No Response..." or id_data == "Unknown command.":
+                    print(f"System output found: {book_data}, skipping updation...")
+                
+                else:
+                    notify_id_change(id_data)
+                    print(f"ID data updated, ID: {id_data}")
             
-            else:
-                notify_id_change(id_data)
-                print(f"ID data updated, ID: {id_data}")
-        
-        except serial.SerialException as e:
-            print(f"Error reading the data from serial: {e}")
-            break
+            except serial.SerialException as e:
+                print(f"Error reading the data from serial: {e}")
+                break
 
 # Function to send command to serial to start the id read for 3 seconds
 # once the read starts, read the next line data, ie, the id data and update it on the web
 def get_book_read_data():
     global stop_threads, book_data
     while not stop_threads:
-        try:
-            if ser.in_waiting > 0:
-                book_data = ser.readline().strip().decode('utf-8')
+        if ser.in_waiting > 0:
+            book_data = ser.readline().strip().decode('utf-8')
+            try:
 
-            if book_data == "PCD_Authenticate() failed: Error in communication." or id_data == "PCD_Authenticate() failed: Timeout in communication." or id_data == "MIFARE_Read() failed: The CRC_A does not match." :
-                print(f"Encountered error: {book_data}")
+                if book_data == "PCD_Authenticate() failed: Error in communication." or id_data == "PCD_Authenticate() failed: Timeout in communication." or id_data == "MIFARE_Read() failed: The CRC_A does not match." :
+                    print(f"Encountered error: {book_data}")
 
-            elif book_data == "No Response..." or book_data == "Unknown command.":
-                print(f"System output found: {book_data}, skipping updation...")
-                continue;
+                elif book_data == "No Response..." or book_data == "Unknown command.":
+                    print(f"System output found: {book_data}, skipping updation...")
+                
+                else:
+                    notify_book_change(book_data)
+                    print(f"ID data updated, ID: {book_data}")
             
-            else:
-                notify_book_change(book_data)
-                print(f"ID data updated, ID: {book_data}")
-        
-        except serial.SerialException as e:
-            print(f"Error reading the data from serial: {e}")
-            break
+            except serial.SerialException as e:
+                print(f"Error reading the data from serial: {e}")
+                break
 
 # Endpoint definitions
 
@@ -134,16 +132,17 @@ def id_status(state):
         while not stop_threads:
             Serial_write(id_read_command)
             time.sleep(3)
+        return {"status": "ID reading stopped"}, 200
     
     elif state == 0:
         stop_threads = True
         if id_thread is not None:
             id_thread.join()
             print("ID reader thread stopped...")
-        return jsonify({'status': 'ID read thread terminated'})
+        return jsonify({'status': 'ID read thread terminated'}), 200
     
     else:
-        return jsonify({'status': "invalid state"})
+        return jsonify({'status': "invalid state"}), 400
     
 @app.route('/BookreadingStatus/<int:state>', methods=['POST'])
 def book_status(state):
@@ -158,16 +157,17 @@ def book_status(state):
         while not stop_threads:
             Serial_write(book_read_command)
             time.sleep(3)
+        return {"status": "Book reading stopped"}, 200
     
     elif state == 0:
         stop_threads = True
         if book_thread is not None:
             book_thread.join()
             print("ID reader thread stopped...")
-        return jsonify({'status': 'Book read thread terminated'})
+        return jsonify({'status': 'Book read thread terminated'}), 200
     
     else:
-        return jsonify({'status': "invalid state"})
+        return jsonify({'status': "invalid state"}), 400
 
 @app.route('/breakConnection', methods=['POST'])
 def break_connection():
@@ -192,6 +192,16 @@ def  get_id_data():
     return jsonify({
         'id_data': id_data
     })
+
+@app.route('/postData', methods=['POST'])
+def postData():
+    response = request.get_json()
+    if 'id' in response:
+        print(f"Received data: {response['id']}")
+        return jsonify({'received data': response['id']})
+    else:
+        print("post failed")
+        return jsonify({'status': "failed"})
 
 if __name__ == '__main__':
     socketio.run(app)

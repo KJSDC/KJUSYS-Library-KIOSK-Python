@@ -6,6 +6,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const disconnectCOM = document.getElementById("disconnectCOM");
     const IDcard = document.getElementById("idCardData");
     const Book = document.getElementById("bookData");
+
+    let idstatus = false;
+    let bookstatus = false;
   
     const socket = io()
   
@@ -41,17 +44,17 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   
-      // Update id data function call
-      async function getIDData() {
-        try {
-          const response = await fetch("/getIDData");
-          const result = await response.json();
-          IDcard.value = result.id_data;      
-    
-        } catch (error) {
-          console.error("Error fetching read data:", error);
-        }
+    // Update id data function call
+    async function getIDData() {
+      try {
+        const response = await fetch("/getIDData");
+        const result = await response.json();
+        IDcard.value = result.id_data;      
+  
+      } catch (error) {
+        console.error("Error fetching read data:", error);
       }
+    }
   
     // Load the ports into both the drop down menus
     function loadPorts() {
@@ -126,18 +129,44 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   
     // Fetch endpoint to start the ID thread
-    startIDReadingBtn.addEventListener("click", (event) => {
+    startIDReadingBtn.addEventListener("click", async (event) => {
       event.preventDefault();
+
+      idstatus = true;
+      // Remove active class and stop book reading if book reading is active while clicking start id reading
+      if (bookstatus) {
+        bookstatus = false;
+        // Restore Book button
+        startBookReadingBtn.textContent = "Start Book Reading";
+        startBookReadingBtn.classList.remove("active");
+        startBookReadingBtn.disabled = false;
+
+        sendCommand("/BookreadingStatus/0");
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      
       sendCommand("/IDreadingStatus/1");
-  
       startIDReadingBtn.disabled = true;
       startIDReadingBtn.textContent = "Read Active";
       startIDReadingBtn.classList.add("active");
     });
   
     // Fetch endpoint to start the Book thread
-    startBookReadingBtn.addEventListener("click", (event) => {
+    startBookReadingBtn.addEventListener("click", async (event) => {
       event.preventDefault();
+
+      bookstatus = true;
+      // Remove active class and stop id reading if id reading is active while clicking start book reading
+      if (idstatus) {
+        idstatus = false;
+        // Restore ID button
+        startIDReadingBtn.textContent = "Start ID Reading";
+        startIDReadingBtn.classList.remove("active");
+        startIDReadingBtn.disabled = false;
+
+        sendCommand("/IDreadingStatus/0");
+        await new Promise((r) => setTimeout(r, 500));
+      }
       sendCommand("/BookreadingStatus/1");
   
       startBookReadingBtn.disabled = true;
@@ -148,6 +177,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Fetch endpoint to stop the keystrokes thread
     stopKeystrokeBtn.addEventListener("click", async (event) => {
       event.preventDefault();
+      idstatus = false;
+      bookstatus = false;
       sendCommand("/IDreadingStatus/0");
       // Delay to mitigate serial conflict
       await new Promise((r) => setTimeout(r, 500));
