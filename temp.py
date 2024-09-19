@@ -58,6 +58,7 @@ def get_id_read_data():
                 # Handle various error messages from the device
                 if id_data == "PCD_Authenticate() failed: Error in communication." or \
                    id_data == "PCD_Authenticate() failed: Timeout in communication." or \
+                   id_data == "MIFARE_Read() failed: Collision detected." or \
                    id_data == "MIFARE_Read() failed: The CRC_A does not match.":
                     print(f"Encountered error: {id_data}")
 
@@ -81,8 +82,9 @@ def get_book_read_data():
             try:
                 # Handle various error messages from the device
                 if book_data == "PCD_Authenticate() failed: Error in communication." or \
-                   id_data == "PCD_Authenticate() failed: Timeout in communication." or \
-                   id_data == "MIFARE_Read() failed: The CRC_A does not match.":
+                   book_data == "PCD_Authenticate() failed: Timeout in communication." or \
+                   book_data == "MIFARE_Read() failed: Collision detected." or \
+                   book_data == "MIFARE_Read() failed: The CRC_A does not match.":
                     print(f"Encountered error: {book_data}")
 
                 elif book_data == "No Response..." or book_data == "Unknown command.":
