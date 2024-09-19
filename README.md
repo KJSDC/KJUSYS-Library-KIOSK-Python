@@ -29,10 +29,17 @@ LMS-nosql is a database-free version of a Library Management System (LMS). It wr
      ```
 
 4. **Start the Server**:
-   - Double-click `server.py` or run it from the terminal:
+   - Double-click `temp.py` or run it from the terminal:
      ```bash
-     python server.py
+     python temp.py
      ```
+
+5. **Start the port forwarding server**:
+   - Enter the following command in the base folder, this will be a one time process:
+      ```bash
+     ngrok.exe config add-authtoken your-auth-token
+     ```
+   - Double-click `port-forwarder.bat` to start the port forwarding
    - Copy the link provided by the terminal and paste it into your web browser to access the application.
 
 ## Note
