@@ -1,3 +1,6 @@
+# from gevent import monkey
+# monkey.patch_all()
+
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO, emit
 import serial.tools.list_ports
@@ -8,7 +11,7 @@ import time
 
 # Initialize Flask application and configure SocketIO and CORS
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 CORS(app)
 
 # Global variables for serial communication and threads
@@ -208,4 +211,4 @@ def postData():
 
 # Run the Flask app with SocketIO
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, host='0.0.0.0', port=80)
