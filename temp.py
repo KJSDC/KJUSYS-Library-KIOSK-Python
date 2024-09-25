@@ -126,9 +126,22 @@ def connect_ports():
 # Endpoint to start/stop ID reading
 @app.route('/IDreadingStatus/<int:state>', methods=['POST'])
 def id_status(state):
-    global stop_threads, id_thread
+    global stop_threads, id_thread, book_thread
 
     if state == 1:  # Start ID reading
+        # Stop any running book reading thread before starting the ID thread
+        if book_thread is not None and book_thread.is_alive():
+            stop_threads = True
+            book_thread.join()
+            print("Book reader thread stopped for ID reader to start...")
+            stop_threads = False
+        
+        # Stop any running ID thread before starting a new one
+        if id_thread is not None and id_thread.is_alive():
+            stop_threads = True
+            id_thread.join()
+            print("ID reader thread stopped...")
+
         stop_threads = False
         id_thread = threading.Thread(target=get_id_read_data)
         id_thread.start()
@@ -152,9 +165,22 @@ def id_status(state):
 # Endpoint to start/stop book reading
 @app.route('/BookreadingStatus/<int:state>', methods=['POST'])
 def book_status(state):
-    global stop_threads, book_thread
+    global stop_threads, id_thread, book_thread
 
     if state == 1:  # Start book reading
+        # Stop any running ID reading thread before starting the book thread
+        if id_thread is not None and id_thread.is_alive():
+            stop_threads = True
+            id_thread.join()
+            print("ID reader thread stopped for Book reader to start...")
+            stop_threads = False
+        
+        # Stop any running book thread before starting a new one
+        if book_thread is not None and book_thread.is_alive():
+            stop_threads = True
+            book_thread.join()
+            print("Book reader thread stopped...")
+
         stop_threads = False
         book_thread = threading.Thread(target=get_book_read_data)
         book_thread.start()
