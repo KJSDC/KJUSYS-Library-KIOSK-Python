@@ -8,11 +8,22 @@ from flask_cors import CORS
 import threading
 import serial
 import time
+from dotenv import load_dotenv
+import os
+import sys
 
 # Initialize Flask application and configure SocketIO and CORS
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 CORS(app)
+
+load_dotenv()
+
+COM_PORT = os.getenv("COM_PORT")
+
+if not COM_PORT:
+    print("COM_PORT not configured in .env")
+    sys.exit()
 
 # Global variables for serial communication and threads
 ser = None
@@ -97,6 +108,20 @@ def get_book_read_data():
             except serial.SerialException as e:
                 print(f"Error reading the data from serial: {e}")
                 break
+
+# connect to com port
+def kisokConnect():
+    global ser
+    try:
+        # Establish connection to the serial port
+        ser = serial.Serial(COM_PORT, baudrate=9600, timeout=1)
+        print(f"Connected to {COM_PORT}")
+    except serial.SerialException as e:
+        print(f"Failed to connect to {COM_PORT}")
+
+##
+## ENDPOINTS
+##
 
 # Define endpoint for the main page
 @app.route('/')
@@ -239,4 +264,5 @@ def postData():
 
 # Run the Flask app with SocketIO
 if __name__ == '__main__':
+    kisokConnect()
     socketio.run(app, host='0.0.0.0', port=80)
