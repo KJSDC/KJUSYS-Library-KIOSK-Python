@@ -147,7 +147,7 @@ def id_status(state):
         id_thread.start()
         print("ID reader thread started...")
 
-        while not stop_threads:
+        while id_thread.is_alive():
             Serial_write(id_read_command)
             time.sleep(3)
         return {"status": "ID reading stopped"}, 200
@@ -186,7 +186,7 @@ def book_status(state):
         book_thread.start()
         print("Book reader thread started...")
 
-        while not stop_threads:
+        while book_thread.is_alive():
             Serial_write(book_read_command)
             time.sleep(3)
         return {"status": "Book reading stopped"}, 200
