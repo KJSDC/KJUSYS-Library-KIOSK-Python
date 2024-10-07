@@ -27,6 +27,19 @@ id_thread = None
 book_thread = None
 stop_threads = threading.Event()
 
+MIFARE_ERRORS_LIST = [
+    "PCD_Authenticate() failed: Error in communication.", 
+    "PCD_Authenticate() failed: Timeout in communication.",
+    "MIFARE_Read() failed: Error in communication.", 
+    "MIFARE_Read() failed: Collision detected.", 
+    "MIFARE_Read() failed: The CRC_A does not match."
+]
+
+SYSTEM_OUTPUT_LIST = [
+    "No Response...", 
+    "Unknown command."
+]
+
 # Variables to store the latest data read from each Arduino
 id_data = ""
 book_data = ""
@@ -58,7 +71,7 @@ def notify_book_change(new_book):
 
 # Function to read ID data from the serial port
 def get_id_read_data():
-    global id_data, ser
+    global id_data, ser, MIFARE_ERRORS_LIST, SYSTEM_OUTPUT_LIST
     
     # send id read command to read id
     Serial_write(id_read_command)
@@ -68,18 +81,10 @@ def get_id_read_data():
             id_data = ser.readline().strip().decode('utf-8')
             try:
                 # Handle various error messages from the device
-                if id_data in [
-                    "PCD_Authenticate() failed: Error in communication.", 
-                    "PCD_Authenticate() failed: Timeout in communication.", 
-                    "MIFARE_Read() failed: Collision detected.", 
-                    "MIFARE_Read() failed: The CRC_A does not match."
-                ]:
+                if id_data in MIFARE_ERRORS_LIST:
                     print(f"Encountered error: {id_data}")
 
-                elif id_data in [
-                    "No Response...", 
-                    "Unknown command."
-                ]:
+                elif id_data in SYSTEM_OUTPUT_LIST:
                     print(f"System output found: '{id_data}', skipping updation...")
                     
                 else:
@@ -97,7 +102,7 @@ def get_id_read_data():
 
 # Function to read book data from the serial port
 def get_book_read_data():
-    global book_data, ser
+    global book_data, ser, MIFARE_ERRORS_LIST, SYSTEM_OUTPUT_LIST
 
     # send book read command to read book
     Serial_write(book_read_command)
@@ -106,18 +111,10 @@ def get_book_read_data():
             book_data = ser.readline().strip().decode('utf-8')
             try:
                 # Handle various error messages from the device
-                if book_data in [
-                    "PCD_Authenticate() failed: Error in communication.", 
-                    "PCD_Authenticate() failed: Timeout in communication.", 
-                    "MIFARE_Read() failed: Collision detected.", 
-                    "MIFARE_Read() failed: The CRC_A does not match."
-                ]:
+                if book_data in MIFARE_ERRORS_LIST:
                     print(f"Encountered error: {book_data}")
 
-                elif book_data in [
-                    "No Response...", 
-                    "Unknown command."
-                ]:
+                elif book_data in SYSTEM_OUTPUT_LIST:
                     print(f"System output found: '{book_data}', skipping updation...")
                 
                 else:
