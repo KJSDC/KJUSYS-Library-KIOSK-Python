@@ -1,24 +1,44 @@
-# from gevent import monkey
-# monkey.patch_all()
-
 from flask import Flask, request, jsonify, render_template
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 import serial.tools.list_ports
 from flask_cors import CORS
 import threading
 import serial
-import time
+from dotenv import load_dotenv
+import os
+import sys
 
 # Initialize Flask application and configure SocketIO and CORS
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 CORS(app)
 
+load_dotenv()
+
+COM_PORT = os.getenv("COM_PORT")
+
+if not COM_PORT:
+    print("COM_PORT not configured in .env")
+    sys.exit()
+
 # Global variables for serial communication and threads
 ser = None
 id_thread = None
 book_thread = None
-stop_threads = False
+stop_threads = threading.Event()
+
+MIFARE_ERRORS_LIST = [
+    "PCD_Authenticate() failed: Error in communication.", 
+    "PCD_Authenticate() failed: Timeout in communication.",
+    "MIFARE_Read() failed: Error in communication.", 
+    "MIFARE_Read() failed: Collision detected.", 
+    "MIFARE_Read() failed: The CRC_A does not match."
+]
+
+SYSTEM_OUTPUT_LIST = [
+    "No Response...", 
+    "Unknown command."
+]
 
 # Variables to store the latest data read from each Arduino
 id_data = ""
@@ -32,6 +52,7 @@ stop_write_command = ":"
 
 # Function to send commands to the serial port
 def Serial_write(command):
+    global ser
     if ser:
         ser.write(command.encode())
         print(f"Command sent to serial: {command}")
@@ -50,21 +71,22 @@ def notify_book_change(new_book):
 
 # Function to read ID data from the serial port
 def get_id_read_data():
-    global stop_threads, id_data
-    while not stop_threads:
+    global id_data, ser, MIFARE_ERRORS_LIST, SYSTEM_OUTPUT_LIST
+    
+    # send id read command to read id
+    Serial_write(id_read_command)
+    while not stop_threads.is_set():
+        
         if ser.in_waiting > 0:
             id_data = ser.readline().strip().decode('utf-8')
             try:
                 # Handle various error messages from the device
-                if id_data == "PCD_Authenticate() failed: Error in communication." or \
-                   id_data == "PCD_Authenticate() failed: Timeout in communication." or \
-                   id_data == "MIFARE_Read() failed: Collision detected." or \
-                   id_data == "MIFARE_Read() failed: The CRC_A does not match.":
+                if id_data in MIFARE_ERRORS_LIST:
                     print(f"Encountered error: {id_data}")
 
-                elif id_data == "No Response..." or id_data == "Unknown command.":
-                    print(f"System output found: {book_data}, skipping updation...")
-                
+                elif id_data in SYSTEM_OUTPUT_LIST:
+                    print(f"System output found: '{id_data}', skipping updation...")
+                    
                 else:
                     notify_id_change(id_data)
                     print(f"ID data updated, ID: {id_data}")
@@ -73,22 +95,27 @@ def get_id_read_data():
                 print(f"Error reading the data from serial: {e}")
                 break
 
+            finally:
+                # send id read command to read id again
+                Serial_write(id_read_command)
+        
+
 # Function to read book data from the serial port
 def get_book_read_data():
-    global stop_threads, book_data
-    while not stop_threads:
+    global book_data, ser, MIFARE_ERRORS_LIST, SYSTEM_OUTPUT_LIST
+
+    # send book read command to read book
+    Serial_write(book_read_command)
+    while not stop_threads.is_set():
         if ser.in_waiting > 0:
             book_data = ser.readline().strip().decode('utf-8')
             try:
                 # Handle various error messages from the device
-                if book_data == "PCD_Authenticate() failed: Error in communication." or \
-                   book_data == "PCD_Authenticate() failed: Timeout in communication." or \
-                   book_data == "MIFARE_Read() failed: Collision detected." or \
-                   book_data == "MIFARE_Read() failed: The CRC_A does not match.":
+                if book_data in MIFARE_ERRORS_LIST:
                     print(f"Encountered error: {book_data}")
 
-                elif book_data == "No Response..." or book_data == "Unknown command.":
-                    print(f"System output found: {book_data}, skipping updation...")
+                elif book_data in SYSTEM_OUTPUT_LIST:
+                    print(f"System output found: '{book_data}', skipping updation...")
                 
                 else:
                     notify_book_change(book_data)
@@ -97,6 +124,24 @@ def get_book_read_data():
             except serial.SerialException as e:
                 print(f"Error reading the data from serial: {e}")
                 break
+
+            finally:
+                # send book read command to read book again
+                Serial_write(book_read_command)
+
+# connect to com port
+def kisokConnect():
+    global ser
+    try:
+        # Establish connection to the serial port
+        ser = serial.Serial(COM_PORT, baudrate=9600, timeout=1)
+        print(f"Connected to {COM_PORT}")
+    except serial.SerialException as e:
+        print(f"Failed to connect to {COM_PORT}")
+
+##
+## ENDPOINTS
+##
 
 # Define endpoint for the main page
 @app.route('/')
@@ -131,30 +176,26 @@ def id_status(state):
     if state == 1:  # Start ID reading
         # Stop any running book reading thread before starting the ID thread
         if book_thread is not None and book_thread.is_alive():
-            stop_threads = True
+            stop_threads.set()
             book_thread.join()
             print("Book reader thread stopped for ID reader to start...")
-            stop_threads = False
         
         # Stop any running ID thread before starting a new one
         if id_thread is not None and id_thread.is_alive():
-            stop_threads = True
+            stop_threads.set()
             id_thread.join()
             print("ID reader thread stopped...")
 
-        stop_threads = False
-        id_thread = threading.Thread(target=get_id_read_data)
+        stop_threads.clear()
+        id_thread = threading.Thread(target=get_id_read_data, daemon= True)
         id_thread.start()
         print("ID reader thread started...")
 
-        while not stop_threads:
-            Serial_write(id_read_command)
-            time.sleep(3)
-        return {"status": "ID reading stopped"}, 200
+        return {"status": "ID reading started"}, 200
     
     elif state == 0:  # Stop ID reading
-        stop_threads = True
-        if id_thread is not None:
+        stop_threads.set()
+        if id_thread is not None and id_thread.is_alive():
             id_thread.join()
             print("ID reader thread stopped...")
         return jsonify({'status': 'ID read thread terminated'}), 200
@@ -170,29 +211,25 @@ def book_status(state):
     if state == 1:  # Start book reading
         # Stop any running ID reading thread before starting the book thread
         if id_thread is not None and id_thread.is_alive():
-            stop_threads = True
+            stop_threads.set()
             id_thread.join()
             print("ID reader thread stopped for Book reader to start...")
-            stop_threads = False
         
         # Stop any running book thread before starting a new one
         if book_thread is not None and book_thread.is_alive():
-            stop_threads = True
+            stop_threads.set()
             book_thread.join()
             print("Book reader thread stopped...")
 
-        stop_threads = False
-        book_thread = threading.Thread(target=get_book_read_data)
+        stop_threads.clear()
+        book_thread = threading.Thread(target=get_book_read_data, daemon=True)
         book_thread.start()
         print("Book reader thread started...")
 
-        while not stop_threads:
-            Serial_write(book_read_command)
-            time.sleep(3)
-        return {"status": "Book reading stopped"}, 200
+        return {"status": "Book reading started"}, 200
     
     elif state == 0:  # Stop book reading
-        stop_threads = True
+        stop_threads.set()
         if book_thread is not None:
             book_thread.join()
             print("Book reader thread stopped...")
@@ -206,7 +243,7 @@ def book_status(state):
 def break_connection():
     global ser, stop_threads
 
-    stop_threads = True
+    stop_threads.set()
     if ser.is_open:
         ser.close()
 
@@ -239,4 +276,5 @@ def postData():
 
 # Run the Flask app with SocketIO
 if __name__ == '__main__':
+    kisokConnect()
     socketio.run(app, host='0.0.0.0', port=80)

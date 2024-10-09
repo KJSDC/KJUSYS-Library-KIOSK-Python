@@ -44,6 +44,7 @@ LMS-nosql is a database-free version of a Library Management System (LMS). It wr
 
 ## Note
 - Ensure the correct COM port is selected, the buttons are active only when the port is selected.
+- You can either select COM port manually from the ui or add `COM_PORT=""` variable in a `.env` file. The server will (try to) connect to the specified port automatically on startup.
 - Verify that the RFID reader is properly connected.
 - Check the terminal for any error messages.
 - Before clicking `write data` button, make sure you place the card on top of the reader.
