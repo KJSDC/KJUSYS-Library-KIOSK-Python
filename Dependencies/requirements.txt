@@ -2,3 +2,5 @@ flask
 pyautogui
 pyserial
 flask-socketio
+flask-cors
+dotenv
